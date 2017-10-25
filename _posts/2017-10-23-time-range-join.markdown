@@ -93,9 +93,11 @@ Let's consider a dataset `G` with the fields - `{id, time, row-type, points}`. D
 |--|:--:|:--:|:--:|:----:|
 |**A**|id|time|'a'|NULL|
 |**B+**|id|start-time|'b'|points|
-|**B-**|id|end-time|'b'|points|
+|**B-**|id|end-time|'b'|-1 * points|
 
-
+* Because we are generalizing the datasets, in order to differentiate between the two, `row-type` is added to `G`.
+* We split the `B` dataset into two datasets - `B+` and `B-`. `B+` has `start-time` as `time` in `G`.  
+(in progress...)
 	
 
 
