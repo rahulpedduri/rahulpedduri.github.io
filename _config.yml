@@ -16,9 +16,9 @@
 title: What I've learnt
 email: rahul.pedduri@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
-  A blog about experiences from a geek. Now, that can be anything from personal experiences to thoughts and insights. 
+  A blog about experiences from a geek.  
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://rahulpedduri.github.io" 
 twitter_username: rahulpedduri
 github_username:  rahulpedduri
 
@@ -27,6 +27,11 @@ markdown: kramdown
 theme: minima
 plugins:
   - jekyll-feed
+
+kramdown:
+  input: GFM
+  auto_ids: true
+  syntax_highlighter: rouge  
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
