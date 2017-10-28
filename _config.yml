@@ -28,6 +28,7 @@ theme: minima
 plugins:
   - jekyll-feed
 
+highlighter: rouge
 kramdown:
   input: GFM
   auto_ids: true
