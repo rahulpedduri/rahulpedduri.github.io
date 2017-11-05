@@ -311,7 +311,7 @@ One last note before we close, I want to talk a little about why we used an iter
 |2|10:01|a|50|
 
 
-###Conclusion
+#### Conclusion
 What we have illustrated in this post is a very simple example. In many cases, its a lot more complicated. But the if you have understood the base idea, the rest shouldn't be too hard, just make a variant of this solution. 
 
 For example, if the `points` need be be grouped, rather than being aggregated, you could make a change to `merge()` in our code from `(currPoints + existingValue)` to using a `HashSet/LinkedList` data structure that adds `points` to the set/list if it is `b+` and remove from the set/list if it is `b-` record. Or maybe you could implement merge with a function parameter with which you can control how you merge at every step.
