@@ -46,7 +46,7 @@ The way to interact with druid is through REST APIs. If you ask me, that is a go
 
 Let us load the data into druid.
 
-```scala
+```json
 {
   "type" : "index_hadoop",
   "spec" : {
@@ -180,7 +180,7 @@ Ljava/lang/Object;
 ```
 This error is due to the fact that hadoop and druid are using conflicting `fasterxml` versions. As a matter of fact there are many other dependencies that druid uses that are already present on hadoop . One common way to solve this issue is to build your own fat jar from druid source. If you do choose to build one, you might want to use this [sbt file][sbt-file]. There is however another way to solve this. Druid provides a way to pass in some properties for the job. Modify the index task to include these new job properties.
 
-```scala
+```json
 "jobProperties": {
 "mapreduce.job.classloader": "true",
 "mapreduce.job.classloader.system.classes": "-javax.validation.,java.,javax.,org.apache.commons.logging.,org.apache.log4j.,org.apache.hadoop."
