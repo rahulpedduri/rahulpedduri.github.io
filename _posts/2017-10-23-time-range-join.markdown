@@ -67,11 +67,11 @@ Based on our answer, the output should be -
 |1|10:15|40|// 10 + 30|
 |2|10:01|50|// 50|
  
- 
-[INSERT SVG HERE]
+Perhaps, a picture might give you a better intuition: 
+{% include time_range_ex1.svg %}
  
  ---
- Here are a few observations: 
+Here are a few observations: 
  * The join between `A` and `B` is a many-to-many join. It may not seem like much at this scale but it is going to be a nightmare for large datasets. 
  * Not all the records of the join are useful. For instance, the 4th row in `B`, with `40 points` was part of the output of the `JOIN` clause, but it was filtered out in the `WHERE` clause. 
  * There is an overlap in the aggregation(a by product of the many-to-many join). For instance, The first row of `B` with `10 points`, is part of the aggregation of first and second rows in `A`
@@ -80,10 +80,7 @@ Based on our answer, the output should be -
  
 # A solution
 
-Now, you could simply implement the same query as above translated to RDDs or dataframes. As we said before, it is not  scalable enough. It might not even finish depending upon the size of the data. 
-...
-...
-(go on)
+Now, you could simply implement the same query as above translated to RDDs or dataframes. As we said before, it is not  scalable enough. It might not even finish depending upon the size of the data. What we have is a different approach a time-range join, without a join itself. A senior developer in my team introduced me to this solution. 
 
 #### The algorithm
 1. Generalize the datasets and combine them.
@@ -207,7 +204,7 @@ val gPartitioned = gRddKV.repartitionAndSortWithinPartitions(partitioner)
 The data by this stage is generalized, partitioned and sorted within that partition. 
 
 Now, follow these steps for every partition, separately:<br/>
-1. Maintain a map `M` such that `key = id` and `value = points`. Intially, `M` is empty. 
+1. Maintain a map `M` such that `key = id` and `value = points`. Initially, `M` is empty. 
 2. Iterate through all the `time` ascending sorted records. 
 3. For every record, 
  -  if it is a `b+` or `b-` record, *merge* it with `M`.
@@ -271,11 +268,11 @@ new Iterator: [Option[(GKey, Long)]] {
 }
 ```
 
-That's it! What you get after these 3 stages is an `RDD[Option[(GKey, Long)]]`. What you choose to from here on its upto you. 
+That's it! What you get after these 3 stages is an `RDD[Option[(GKey, Long)]]`. What you choose to from here on its up to you. 
 
 One last note before we close, I want to talk a little about why we used an iterator. 
 1. `perPartition()` function will be called by RDD's `mapPartitions()`. `mapPartitions` expects an iterator in return. 
-2. This is a perfect use case for an iterator. Once, you have final output `(Gkey, Long)`, you don'e need it again for the records to come after that. So, there is no need to keep track of the final output records. You could very well store the output records in a list and return an iterator of that list. But that would be a waste of memory; And you would have to deal with memory issues, JVM tuning, etc.  
+2. This is a perfect use case for an iterator. Once, you have final output `(Gkey, Long)`, you don't need it again for the records that are read after that. So, there is no need to keep track of the final output records. You could very well store the output records in a list and return an iterator of that list. But that would be a waste of memory; And you would have to deal with memory issues, JVM tuning, etc.  
 
 |Partition - 1 Intermediate |
 |id|time|row-type|points|in M|
@@ -319,10 +316,11 @@ For example, if the `points` need be be grouped, rather than being aggregated, y
 So. Sigh! Let me know what you think of this post. Write a comment, ask a question or point out what is wrong. :)
 
 # References and credits
-*  Chow Keung, a senior developer in my team, who doesn't have an online presence. 
+*  [Chow Keung(CK)][ck], a senior developer in my team. 
 *  [A stackoverflow question on time-range join][so-join] 
 *  [This elaborate blog on how to use repartition and sort within partitions][spark-repartition-blog]
 
+[ck]: https://www.linkedin.com/in/chowck/
 [so-join]: https://stackoverflow.com/q/27138392/1101823 
 [spark-repartition-blog]: http://codingjunkie.net/spark-secondary-sort/
 [spark-ordered-api]: http://spark.apache.org/docs/latest/api/scala/index.html#org.apache.spark.rdd.OrderedRDDFunctions
