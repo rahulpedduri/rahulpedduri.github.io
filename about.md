@@ -10,7 +10,7 @@ A blog about experiences. Now, that can be anything from personal experiences to
 
 Introvert. Developer. Gamer. That about sums up me. :)
 
-I am a `developer`. Now, I want that _definition_ to be broad because, I like to solve interesting problems. Then again, I am a developer in the field of big data. 
+I am a `developer`. Now, I want that _definition_ to be broad because, I like to solve interesting problems. So, I am a developer first and then a developer in the field of big data. 
 
 If you want to know more about me as a developer, you should visit my [stackoverflow][so] and [github][gh] profiles
 
