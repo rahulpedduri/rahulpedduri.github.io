@@ -28,14 +28,15 @@ Fortunately, we have a work around to that. But, it doesn't remove the skew prob
 
 Lets consider a dataset
 
-[INSERT EXAMPLE DATASET]
+[TODO: INSERT EXAMPLE DATASET]
 
 #### The algorithm
 1. Generalize the datasets and combine them.
 2. Partition the data and sort them. 
 3. Calculate partial-aggregate and final-map per partition. 
-4. Calculate initial-aggregate for every partition. 
-5. Merge initial-aggregate with partial-aggregate.
+4. Filter, partition and sort within partitions.
+5. Calculate initial-aggregate for every partition. 
+6. Merge initial-aggregate with partial-aggregate.
 
 ### Stage 1: Generalize the datasets and combine them:
 This is similar to the previous post. Except, `G` has an extra field - `time-bucket`. 
@@ -49,7 +50,7 @@ Also, when `t1 = t2` then `b1 = b2` <br/>
 
 In human terms, the function divides time into `n` chunks and assigns a monotonically increasing `bucket-id`. For example, 9:30 AM - 10:00 AM may be part of bucket with `bucket-id = 1` and 10:00 AM to 10:30 AM maybe part of a bucket with `bucket-id = 2`. If `n = 24`, we will have 24 time-buckets with a 1-hour maximum time range in each of the bucket.
 
-[INSERT SVG HERE]
+[TODO: INSERT SVG HERE]
 
 ||G|
 ||id|time|bucket|row-type|tie-breaker|points|
@@ -70,7 +71,7 @@ For simplicity's sake, I will use the terms `a` records, `b+` records or `b-` re
 Notice that we have also included a `tie-breaker` field which includes simple integers `{0,1,2}` for `a`,`b+` and `b-` respectively. 
 
 
-[INSERT EXAMPLE DATASET]
+[TODO: INSERT EXAMPLE DATASET]
 
 
 ### Stage 2: Partition the data and sort it:
@@ -109,11 +110,11 @@ val partitioner = new IdBucketPartitioner(numPartitions)
 val gPartitioned = gRddKV.repartitionAndSortWithinPartitions(partitioner)
 ```
 
-[INSERT EXAMPLE DATASET]
+[TODO: INSERT EXAMPLE DATASET]
 
 
 ### Stage 3: Calculate partial-aggregate and final-map per partition:
-The first two stages are very similar to our previous approach. As a matter of fact, stages - 3, 4 and 5 in our current approach are also very similar to stage-3 from our previous approach. Having said that, it is going to get messier from here on.  
+The first two stages are very similar to our previous approach. As a matter of fact, stages - 3, 4, 5 and 6 in our current approach are also similar to stage-3 from our previous approach but it gets more complicated. It is going to get messier from here on.  
 
 Follow these steps for every partition, separately:<br/>
 1. Maintain a mutable map `M` such that `key = {id, bucket}` and `value = points`. Initially, `M` is empty. 
@@ -138,31 +139,34 @@ Follow these steps for every partition, separately:<br/>
 ||id|bucket|tie-breaker|row-type|time|points|
 |--|:--:|:--:|:--:|:--:|:---:|:----:|
 |**P**|id|bucket|1|'p'|time|points|
-|**M'**|id|bucket|0|'m'|time|points|
+|**M'**|id|bucket|0|'m'|null|points|
 
+Combining them,     
 $$
 S = P  \cup  M'
 $$ 
 
-Notice that the `tie-breaker` prioritizes `M'` over `P`. The reason for that will be evident in the next stages. 
+Notice that the `tie-breaker` prioritizes `M'` over `P`. There is no use for a `tie-breaker` until stage-6, however. 
+
+Also, just like what we did in stage-1, I will use the terms `p` records and `m` records to denote the records with `row-type = p` and `row-type = m` respectively.
 
 some case classes
 ```scala
-//[COMPLETE CODE]
+//[TODO: COMPLETE CODE]
 case class SKey()
 
 case class SValue()
 ```
 
 ```scala
-//[COMPLETE CODE]
+//[TODO: COMPLETE CODE]
 merge(currentRecord: (String, Long), M: mutable.HashMap[String,Long]) = {
 }
 ```
 
 calculating final map
 ```scala
-//[COMPLETE CODE]
+//[TODO: COMPLETE CODE]
 finalMap(K: mutable.HashSet[(String, Int)], M: mutable.HashMap[String,Long])
      = {
 }
@@ -170,22 +174,124 @@ finalMap(K: mutable.HashSet[(String, Int)], M: mutable.HashMap[String,Long])
 
 The code per partition will look like -
 ```scala
-//[COMPLETE CODE]
+//[TODO: COMPLETE CODE]
 partialAggregatePerPartition(itr: Iterator[(GKey, GValue)]) : Option[(GKey, Long)] = {
 }
 ```
 
-[INSERT EXAMPLE DATASET]
+[TODO: INSERT EXAMPLE DATASET]
 
 
-### stage 4: Calculate initial-aggregate for every partition
+### stage 4: Filter, partition and sort within partitions 
+The output of stage-3 is a dataset `S`, which can be separated into `p` records and `m` records based on the `row-type` field. The next stage of this algorithm is based on `m` records only. 
+
+In this stage, we follow the following three steps: <br/> 
+1. Filter `S` for `m` records. 
+2. Partition the `m` records by `{id}`. This will guarantee that all records with the same `id` are part of the same partition. 
+3. Sort within every partition by `{bucket}`. 
+
+The code for the partitioner -
+```scala
+//[TODO: COMPLETE CODE]
+
+```
+
+Repartition the data and sort within partitions -
+```scala
+//sort order is already defined in <> case class definition
+//[TODO: COMPLETE CODE]
+repartitionAndSortWithinPartitions()
+```
 
 
-### Stage 5: Merge initial-aggregate with partial-aggregate
+[TODO: INSERT EXAMPLE DATASET]
 
 
+### stage 5: Calculate initial-aggregate for every partition
+
+We already know that a `p` record has a partial aggregate based on `b+`/`b-` records seen within that time bucket. In order to complete the partial aggregate, it has to look at `b+`/`b-` records for all the time buckets before the current bucket; The partial aggregate that was calculated has no idea about the time ranges and associated `points` for anything outside the current time bucket.
+
+If you think about it, in order to complete `p`, we need not look at each and every `b+`/`b-` record before the current time bucket, instead an aggregate of those until the start of the current time bucket will still complete `p`. Besides looking at each and every one of those records will be an overhead. 
+
+
+[TODO: INSERT SVG HERE] 
+
+In this stage, we derive `W`, the initial-aggregate - an aggregate of `b+`/`b-` records until the start of every time bucket for every `id`, using `M'`.
+
+To derive `W`, we follow the following steps for every partition of data - 
+1. Maintain a mutable work map `N` such that `key = {id}` and `value = {points}`.
+2. Let's say the record is `R[k,v]`, a key-value pair `r[k]` as the key in the tuple and `r[v]` as the value. 
+3. Find the value of `r[k]` in `N`. Let's say that value is `r[n]`. If there is no key, populate `null` and ignore the next step. 
+4. Return the record `R[k,n]` with `r[k]` as the key and `r[n]` as the value. This record will be part of `W`. 
+5. Update `N` with `R[k,v]`. If `r[k]` exists in `N`, sum the value of that key with `r[v]`. If it doesn't exist, add a new entry in `N`.
+
+The order of the steps 3, 4 and 5 is important. Because `W` is the aggregate of all time buckets before the current one. It should not include the current time bucket. 
+
+To summarize,
+  
+$$
+ W_n = \sum_{i=1}^n m_i
+$$
+ <br/>where W<sub>n</sub> is the initial-aggregate at the start of time bucket `n`
+ 
+$$
+\begin{align}
+ W_1 & = empty \\
+ W_2 & = m_1 \\ 
+ W_3 & = m_1 \oplus m_2 \\
+ W_4 & = m_1 \oplus m_2 \oplus m_3 \\
+ & ... \\ 
+ W_n & = m_1 \oplus m_2 \oplus ... \oplus m_{n-1}
+\end{align}
+$$
+
+```scala
+//[TODO: COMPLETE CODE]
+
+```
+
+[TODO: INSERT EXAMPLE DATASET]
+
+### Stage 6: Merge initial-aggregate with partial-aggregate
+At the end of stage-3, we had dataset `S` with `p` and `m` records. In stage-4 and stage-5, we used `m` records only. The key for `m` records did not change, only the value part of the record changed. In other words, `W` still has the field `row-type = m`. In order to avoid confusion, lets change the `row-type` in `W` to `w` and keep everything else same. 
+
+We need to create `S'` from `S` such that 
+$$
+S = P  \cup  W
+$$
+
+||S'|
+||id|bucket|tie-breaker|row-type|time|points|
+|--|:--:|:--:|:--:|:--:|:---:|:----:|
+|**P**|id|bucket|1|'p'|time|points|
+|**W**|id|bucket|0|'w'|null|points|
+
+Take note of the `tie-breaker` again. This order will guarantee that `w` records always show up before `p` records for the same `id` within the same `bucket`. 
+
+Once again, 
+1. Partition `S'` by `{id, bucket}`. 
+2. Sort within every partition by `{id, bucket, tie-breaker}`
+
+Now follow these steps within every partition: 
+1. Maintain a mutable map `O` such that `key = {id, bucket}` and `value = points`. Initially, `O` is empty. 
+2. For every record, 
+ -  if it is a `w` record, update `O` with it.
+ -  if it is a `p` record, take the value of current record's key in `O` and sum it with the value of current record. 
+
+ 
+```scala
+//[TODO: COMPLETE CODE]
+
+```
+
+[TODO: INSERT EXAMPLE DATASET]
 
 ### Conclusion
+Although this algorithm is complicated, it gives more control over a skew. For example, if the data is highly skewed, I would simply reduce the time window for a time bucket, which distributes the skewed key into multiple buckets. When we implemented this algorithm to solve our time-range join, the performance was phenomenal. There is a downside however - it has a minimum performance overhead because of the many stage approach. We chose to use both approaches to a time-range join. 
+
+In this algorithm, I tried to simplify as much as possible. We used a simple aggregation in a time range problem. In another post, I will demonstrate how to get all records within 'n' seconds of a record - a different time range join problem. 
+
+Comments/suggestions/criticism, welcome!
 
 
 # References and credits
