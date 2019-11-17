@@ -316,7 +316,7 @@ For example, if the `points` need be be grouped, rather than being aggregated, y
 So. Sigh! Let me know what you think of this post. Write a comment, ask a question or point out what is wrong. :)
 
 # References and credits
-*  [Chow Keung(CK)][ck], a senior developer in my team. 
+*  [Chow Keung(CK)][ck], a principal developer in my team. 
 *  [A stackoverflow question on time-range join][so-join] 
 *  [This elaborate blog on how to use repartition and sort within partitions][spark-repartition-blog]
 

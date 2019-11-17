@@ -4,5 +4,4 @@ layout: post
 mathjax: true
 comments: true
 date: '2019-11-16'
-permalink: /posts/:title
 ---

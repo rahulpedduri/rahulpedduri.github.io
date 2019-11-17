@@ -2,7 +2,6 @@
 title: Inspiration
 layout: post
 date: '2019-11-16'
-permalink: /posts/:title
 ---
 
 I usually like to solve interesting problems. So, this one time a collegue sent me an email asking my help in solving a hard problem they have. The weied thing about that request was that, this collegue was from a different department altogether. I was was pleasantly surprised and agreed to help. 

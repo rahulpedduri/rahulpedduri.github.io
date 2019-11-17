@@ -295,7 +295,7 @@ Comments/suggestions/criticism, welcome!
 
 
 # References and credits
-*  [Chow Keung(CK)][ck], a senior developer in my team. 
+*  [Chow Keung(CK)][ck], a principal developer in my team. 
 *  [A stackoverflow question on time-range join][so-join] 
 *  [This elaborate blog on how to use repartition and sort within partitions][spark-repartition-blog]
 
