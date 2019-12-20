@@ -5,6 +5,7 @@ GEM
       public_suffix (>= 2.0.2, < 4.0)
     backports (3.10.3)
     colorator (1.1.0)
+    ffi (1.9.18)
     ffi (1.9.18-x64-mingw32)
     forwardable-extended (2.6.0)
     jekyll (3.6.2)
@@ -41,7 +42,7 @@ GEM
     pathutil (0.16.0)
       forwardable-extended (~> 2.6)
     public_suffix (3.0.0)
-    rack (1.6.8)
+    rack (1.6.12)
     rack-protection (1.5.3)
       rack
     rack-test (0.7.0)
@@ -75,6 +76,7 @@ GEM
       tzinfo (>= 1.0.0)
 
 PLATFORMS
+  ruby
   x64-mingw32
 
 DEPENDENCIES
